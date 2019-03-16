@@ -1,0 +1,163 @@
+#include <boarddefs.h>
+#include <IRremote.h>
+#include <IRremoteInt.h>
+
+// Коды кнопок пульта
+#define BUTTON_UP 16736925  //Up
+#define BUTTON_DOWN 16754775  //Down
+#define BUTTON_STOP 16712445   //Ok
+#define BUTTON_ON 16738455  //1
+#define BUTTON_OFF 16750695  //2
+#define BUTTON_50 16756815 //3
+#define BUTTON_LIGHT 16724175 //4
+#define BUTTON_DARK 16718055 //5
+#define BUTTON_ALL_ZONES 16743045 //6
+#define BUTTON_ZONE_1 16716015 //7
+#define BUTTON_ZONE_2 16726215 //8
+#define BUTTON_ZONE_3 16734885 //9
+#define BUTTON_EMERGENCY 16730805 //0
+
+#define IR_PIN A0
+
+int fast_time = 5000;
+int slow_time = 20000;
+int fade = 1;
+int delay_fast_time = fast_time*fade/255;
+int delay_slow_time = slow_time*fade/255;
+
+
+IRrecv irrecv(IR_PIN); // пин, к которому подключен IR приемник
+decode_results results;
+
+int brightness_zone[4] = {0,0,0,0};
+int zone_pins[3] = {5,6,10};
+int zone_state = 1;
+// это очень жопошная функция, ее нужно подчистить и убрать в какой-нибудь .h файл :)
+void Set_brightness (int new_brightness, int delay_time){
+  if (zone_state == 3){
+    if (brightness_zone[zone_state] < new_brightness){
+      while (brightness_zone[zone_state] < new_brightness){
+            brightness_zone[zone_state] += fade;
+            analogWrite(zone_pins[0], brightness_zone[3]);
+            analogWrite(zone_pins[1], brightness_zone[3]);
+            analogWrite(zone_pins[2], brightness_zone[3]);
+            Serial.println(brightness_zone[3]); 
+            delay(delay_time);        
+      };
+    } else {
+      while (brightness_zone[zone_state] > new_brightness){
+            brightness_zone[zone_state] -= fade;
+            analogWrite(zone_pins[0], brightness_zone[3]);
+            analogWrite(zone_pins[1], brightness_zone[3]);
+            analogWrite(zone_pins[2], brightness_zone[3]);
+            Serial.println(brightness_zone[zone_state]); 
+            delay(delay_time);        
+      };
+    };} else {
+      if (brightness_zone[zone_state] < new_brightness){
+        while (brightness_zone[zone_state] < new_brightness){
+            brightness_zone[zone_state] += fade;
+            analogWrite(zone_pins[zone_state], brightness_zone[zone_state]);
+            Serial.println(brightness_zone[zone_state]); 
+            delay(delay_time);        
+            };
+          } else {
+        while (brightness_zone[zone_state] > new_brightness){
+            brightness_zone[zone_state] -= fade;
+            analogWrite(zone_pins[zone_state], brightness_zone[zone_state]);
+            Serial.println(brightness_zone[zone_state]); 
+            delay(delay_time);        
+            };
+            };
+              };
+  }
+
+void setup() // процедура setup
+{
+  irrecv.enableIRIn();  // запускаем прием инфракрасного сигнала
+  
+  pinMode(zone_pins[0], OUTPUT);
+  pinMode(zone_pins[1], OUTPUT);
+  pinMode(zone_pins[2], OUTPUT);
+  pinMode(IR_PIN, INPUT);
+
+  Serial.begin(9600); // подключаем монитор порта
+}
+
+void loop() {
+  if (irrecv.decode(&results)) // если данные пришли выполняем команды
+  {
+    switch(results.value){
+      case BUTTON_UP:
+       if (brightness_zone[zone_state] < 255) brightness_zone[zone_state]++; else brightness_zone[zone_state] = 0;
+        if (zone_state == 3) {
+          analogWrite(zone_pins[0], brightness_zone[zone_state]);
+          analogWrite(zone_pins[1], brightness_zone[zone_state]);
+          analogWrite(zone_pins[2], brightness_zone[zone_state]);
+          } else analogWrite(zone_pins[zone_state], brightness_zone[zone_state]);
+        Serial.println("UP!"); // отправляем полученные данные на порт
+        Serial.println(brightness_zone[zone_state]);
+        break;
+        
+      case BUTTON_DOWN:
+        if (brightness_zone[zone_state] > 0) brightness_zone[zone_state]--; else brightness_zone[zone_state] = 255;
+         if (zone_state == 3) {
+          analogWrite(zone_pins[0], brightness_zone[zone_state]);
+          analogWrite(zone_pins[1], brightness_zone[zone_state]);
+          analogWrite(zone_pins[2], brightness_zone[zone_state]);
+          } else analogWrite(zone_pins[zone_state], brightness_zone[zone_state]);
+        Serial.println("DOWN!"); // отправляем полученные данные на порт
+        Serial.println(brightness_zone[zone_state]);
+        break;
+        
+      case BUTTON_ON:
+        Set_brightness(255, delay_fast_time);
+        Serial.println("ON!"); // отправляем полученные данные на порт
+        break;
+        
+      case BUTTON_OFF:
+        Set_brightness(0, delay_fast_time);
+        Serial.println("OFF!"); // отправляем полученные данные на порт
+        break;
+        
+      case BUTTON_LIGHT:
+        Set_brightness(255, delay_slow_time);
+        Serial.println("LIGHT!"); // отправляем полученные данные на порт
+        break;
+        
+      case BUTTON_DARK:
+        Set_brightness(0, delay_slow_time);
+        Serial.println("DARK!"); // отправляем полученные данные на порт
+        break;
+        
+      case BUTTON_50:
+        Set_brightness(178, delay_fast_time);
+        Serial.println("50%!"); // отправляем полученные данные на порт
+        break;
+   
+      case BUTTON_ALL_ZONES:
+        zone_state = 3;
+        Serial.println("ALL ZONES!"); // отправляем полученные данные на порт
+        break;
+         
+      case BUTTON_ZONE_1:
+        zone_state = 0;
+        Serial.println("ZONE 1!"); // отправляем полученные данные на порт
+        break;
+        
+     case BUTTON_ZONE_2:
+        zone_state = 1;
+        Serial.println("ZONE 2!"); // отправляем полученные данные на порт
+        break;
+        
+     case BUTTON_ZONE_3:
+        zone_state = 2;
+        Serial.println("ZONE 3!"); // отправляем полученные данные на порт
+        break;
+        
+     default: break;
+    };
+    
+    irrecv.resume(); // принимаем следующий сигнал на ИК приемнике
+  }
+}
