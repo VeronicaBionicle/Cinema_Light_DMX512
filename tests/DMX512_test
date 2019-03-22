@@ -1,0 +1,28 @@
+#include <lib_dmx.h>
+ 
+#define    DMX512     (0)    // (250 kbaud - 2 to 512 channels) Standard USITT DMX-512
+#define    DMX1024    (1)    // (500 kbaud - 2 to 1024 channels) Completely non standard - TESTED ok
+#define    DMX2048    (2)    // (1000 kbaud - 2 to 2048 channels) called by manufacturers DMX1000K, [[:wiki:dmx_512|DMX]] 4x or [[:wiki:dmx_512|DMX]] 1M ???
+ 
+void setup() 
+{
+  
+  ArduinoDmx0.set_tx_address(1);      // poner aqui la direccion de inicio de [[:wiki:dmx_512|DMX]] 
+                                      // put here [[:wiki:dmx_512|DMX]] start address 
+ 
+  ArduinoDmx0.set_tx_channels(21);   // poner aqui el numero de canales a transmitir 
+                                      // put here the number of [[:wiki:dmx_512|DMX]] channels to transmmit
+ 
+  ArduinoDmx0.init_tx(DMX512);        // iniciar transmision universo 0, modo estandar DMX512
+                                      // starts universe 0 as TX, standard mode DMX512
+}  //end setup()
+ 
+void loop()
+{
+  for(auto i = 12; i <= 20; i++){
+     ArduinoDmx0.TxBuffer[i] = 255;
+     delay(500);
+     ArduinoDmx0.TxBuffer[i] = 0;
+     delay(500);
+      };
+}  //end loop()
