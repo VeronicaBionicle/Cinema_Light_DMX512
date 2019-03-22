@@ -4,6 +4,5 @@ This is my graduate qualification work. It controls LED lighting by DMX512. And 
 22/03/2019
 - Decided to use Mega2560, because it has more external interrupts, GPIOs, Timers and USARTs;
 - Tested Arduino four universes DMX 512 library (Toni Merino (C)) and rewrited some vector names to new;
+- Tested IRremote library (z3t0 (C)) on my Mega2560;
 - Uploaded libraries, notes and test pieces to GitHub for convenience.
-
-
