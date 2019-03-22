@@ -1,0 +1,9 @@
+LEDs channels (RGB):
+1) 12, 13, 14
+2) 15, 16, 17
+3) 18, 19, 20
+Wires:
+RED +12V
+BLACK GND (1 XLR pin)
+BLUE Data+ (3 XLR pin)
+GREEN Data- (2 XLR pin)
