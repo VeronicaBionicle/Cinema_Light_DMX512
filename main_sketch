@@ -1,0 +1,187 @@
+#include <TimerThree.h>
+#include <boarddefs.h>
+#include <IRremote.h>
+#include <IRremoteInt.h>
+#include <lib_dmx.h>
+
+// Коды кнопок пульта
+#define BUTTON_UP 16736925  //Up
+#define BUTTON_DOWN 16754775  //Down
+#define BUTTON_STOP 16743045   //6
+#define BUTTON_ON 16738455  //1
+#define BUTTON_OFF 16750695  //2
+#define BUTTON_50 16756815 //3
+#define BUTTON_LIGHT 16724175 //4
+#define BUTTON_DARK 16718055 //5
+#define BUTTON_ALL_ZONES 16730805 //0
+#define BUTTON_ZONE_1 16716015 //7
+#define BUTTON_ZONE_2 16726215 //8
+#define BUTTON_ZONE_3 16734885 //9
+#define BUTTON_EMERGENCY 16728765 //*
+
+#define    DMX512     (0)    // (250 kbaud - 2 to 512 channels) Standard USITT DMX-512
+//pins
+#define IR_PIN A0
+IRrecv irrecv(IR_PIN); // пин, к которому подключен IR приемник
+int zone_pins[3] = {4,5,6};
+//timings
+int fast_time = 1500000; // 1 sec
+int slow_time = 7000000;  // 7 sec
+int period_fast_time = fast_time/255;
+int period_slow_time = slow_time/255;
+
+int max_brightness = 255;
+decode_results results;
+int fade;
+boolean Stop = false;
+boolean Emergency = false;
+boolean p50 = false;
+int brightness_zone[3] = {0,0,0};
+boolean zone_state[3] = {true, true, true};
+int leds[3] = {12, 15, 18};
+
+void setup()
+{
+  irrecv.enableIRIn();  // запускаем прием инфракрасного сигнала
+  
+  pinMode(zone_pins[0], OUTPUT);
+  pinMode(zone_pins[1], OUTPUT);
+  pinMode(zone_pins[2], OUTPUT);
+  pinMode(IR_PIN, INPUT);
+
+  ArduinoDmx1.set_tx_address(1);     
+  ArduinoDmx1.set_tx_channels(21);  
+  ArduinoDmx1.init_tx(DMX512);      
+ 
+  Timer3.initialize();
+  Timer3.attachInterrupt(Timer_int);
+
+  digitalWrite (zone_pins[0], HIGH);
+}
+
+void Timer_int(){
+ for (auto i = 0; i <= 2; i++){
+      if (zone_state[i] == true) {
+        if (p50 == false) {
+          if (((brightness_zone[i] < max_brightness) and (fade == 1)) or (brightness_zone[i] > 0) and (fade == -1)) {brightness_zone[i] += fade;};} else {
+             if (((brightness_zone[i] < max_brightness/2) and (fade == 1)) or (brightness_zone[i] > max_brightness/2) and (fade == -1)) {brightness_zone[i] += fade;};
+          };
+      };
+ };
+};
+  
+void loop() {
+  if (irrecv.decode(&results)) // если данные пришли выполняем команды
+  {
+    switch(results.value){
+      case BUTTON_UP:
+        Stop = false;
+        p50 = false;
+        for (auto i = 0; i <= 2; i++){
+          if (zone_state[i] == true) {if (brightness_zone[i] < 255) brightness_zone[i] += 5;};
+        };
+        break;
+        
+      case BUTTON_DOWN:
+        Stop = false;
+        p50 = false;
+        for (auto i = 0; i <= 2; i++){
+          if (zone_state[i] == true) {if (brightness_zone[i] > 0) brightness_zone[i] -= 5;};
+        };
+        break;
+        
+      case BUTTON_ON:
+        fade = 1;
+        Stop = false;
+        p50 = false;
+        Timer3.setPeriod(period_fast_time);
+        Timer3.restart();
+        break;
+        
+      case BUTTON_OFF:
+        fade = -1;
+        Stop = false;
+        p50 = false;
+        Timer3.setPeriod(period_fast_time);
+        Timer3.restart();
+        break;
+        
+      case BUTTON_LIGHT:
+        fade = 1;
+        Stop = false;
+        p50 = false;
+        Timer3.setPeriod(period_slow_time);
+        Timer3.restart();
+        break;
+        
+      case BUTTON_DARK:
+        fade = -1;
+        Stop = false;
+        p50 = false;
+        Timer3.setPeriod(period_slow_time);
+        Timer3.restart();
+        break;
+        
+      case BUTTON_50:
+        p50 = true;
+        for (auto i = 0; i <= 2; i++){
+          if (zone_state[i] == true) {
+            if (brightness_zone[i] > 178) fade = -1; else fade = 1;
+          };
+        };
+        Stop = false;
+        Timer3.setPeriod(period_fast_time);
+        Timer3.restart();
+        break;
+   
+      case BUTTON_ALL_ZONES:
+        zone_state[0] = true;
+        zone_state[1] = true;
+        zone_state[2] = true;
+        break;
+         
+      case BUTTON_ZONE_1:
+        zone_state[0] = true;
+        zone_state[1] = false;
+        zone_state[2] = false;
+        break;
+        
+     case BUTTON_ZONE_2:
+        zone_state[0] = false;
+        zone_state[1] = true;
+        zone_state[2] = false;
+        break;
+        
+     case BUTTON_ZONE_3: 
+        zone_state[0] = false;
+        zone_state[1] = false;
+        zone_state[2] = true;
+        break;
+
+     case BUTTON_STOP:
+       Timer3.stop();
+       Stop = true;
+       break;
+
+    case BUTTON_EMERGENCY:
+       Timer3.stop();
+       for (auto i = 12; i <= 20; i++){ArduinoDmx1.TxBuffer[i] = 255;};
+       Emergency = true;
+       break;
+        
+     default: break;
+    };
+    
+    irrecv.resume(); // принимаем следующий сигнал на ИК приемнике
+  };
+  
+  if ((Stop == false) and (Emergency == false)) {
+    for (auto i = 0; i <= 2; i++){
+      if (zone_state[i] == true) { 
+        ArduinoDmx1.TxBuffer[leds[i]] = brightness_zone[i];
+        ArduinoDmx1.TxBuffer[leds[i]+1] = brightness_zone[i];
+        ArduinoDmx1.TxBuffer[leds[i]+2] = brightness_zone[i];
+      };
+    };
+  };
+}
