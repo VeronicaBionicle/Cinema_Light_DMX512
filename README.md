@@ -1,5 +1,5 @@
 # Cinema_Light_DMX512
-This is my graduate qualification work. It controls LED lighting by DMX512. And has GPIO and Ethernet interfaces and IR-remote control
+This is my graduate qualification work. It controls LED lighting via DMX512. And has GPIO and Ethernet interfaces and IR-remote control
 
 26/03/2019
 - Main_sketch works! Now it`s DMX512 transiever controlled by IR-remote.
