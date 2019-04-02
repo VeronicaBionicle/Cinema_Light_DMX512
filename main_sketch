@@ -42,7 +42,7 @@ long int slow_time = 7000000;  // 7 sec
 long int period_fast_time = fast_time/255;
 long int period_slow_time = slow_time/255;
 
-int max_brightness[3] = {255, 255, 255};
+int max_brightness[4] = {255, 255, 255, 255};
 decode_results results;
 int fade;
 
@@ -244,22 +244,7 @@ void loop() {
       Mes_br += brightness_zone[i];
       Mes_br += " ";
     };
-      /*if (chosen_zone < 3) {
-      ArduinoDmx1.TxBuffer[leds[chosen_zone]] = brightness_zone[chosen_zone];
-      ArduinoDmx1.TxBuffer[leds[chosen_zone]+1] = brightness_zone[chosen_zone];
-      ArduinoDmx1.TxBuffer[leds[chosen_zone]+2] = brightness_zone[chosen_zone];
-        for (auto i = 0; i <= 2; i++){
-        Mes_br += brightness_zone[i];
-        Mes_br += " ";
-        };
-        } else {
-        for (auto i = 12; i <= 20; i++){ArduinoDmx1.TxBuffer[i] = brightness_zone[chosen_zone];};
-        for (auto i = 0; i <= 2; i++){
-        Mes_br += brightness_zone[i];
-        Mes_br += " ";
-        
-        };
-          };*/
+
 
         
     while (Mes_br.length() < 11){
@@ -354,7 +339,7 @@ void loop() {
                         lcd.print("Max brightness: ");
                         lcd.setCursor(0,1);
                         lcd.print(max_brightness[chosen_zone]);
-                        lcd.print("             ");
+                        lcd.print("              ");
                         irrecv.resume();
                         do {
                     if (irrecv.decode(&results)){
@@ -390,7 +375,7 @@ void loop() {
                           max_brightness[2]= max_brightness[3];
                           };
                         
-                        chosen_zone = 3;
+                        //chosen_zone = 3;
                         Exit = true;
                         break;
                         }
