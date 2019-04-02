@@ -3,6 +3,8 @@
 #include <IRremote.h>
 #include <IRremoteInt.h>
 #include <lib_dmx.h>
+#include <Wire.h> 
+#include <LiquidCrystal_I2C.h>
 
 // Коды кнопок пульта
 #define BUTTON_UP 16736925  //Up
@@ -23,12 +25,15 @@
 //pins
 #define IR_PIN A0
 IRrecv irrecv(IR_PIN); // пин, к которому подключен IR приемник
+
+LiquidCrystal_I2C lcd(0x27,16,2);
+
 int zone_pins[3] = {4,5,6};
 //timings
-int fast_time = 1500000; // 1 sec
-int slow_time = 7000000;  // 7 sec
-int period_fast_time = fast_time/255;
-int period_slow_time = slow_time/255;
+long int fast_time = 1500000; // 1 sec
+long int slow_time = 7000000;  // 7 sec
+long int period_fast_time = fast_time/255;
+long int period_slow_time = slow_time/255;
 
 int max_brightness = 255;
 decode_results results;
@@ -40,7 +45,9 @@ int brightness_zone[3] = {0,0,0};
 boolean zone_state[3] = {true, true, true};
 int leds[3] = {12, 15, 18};
 
-void setup()
+String Message;
+String Mes_br = "";
+void setup() // процедура setup
 {
   irrecv.enableIRIn();  // запускаем прием инфракрасного сигнала
   
@@ -55,8 +62,14 @@ void setup()
  
   Timer3.initialize();
   Timer3.attachInterrupt(Timer_int);
-
+  
+  lcd.init();                      // initialize the lcd
+  lcd.backlight();
+  lcd.clear();
+  
   digitalWrite (zone_pins[0], HIGH);
+
+  
 }
 
 void Timer_int(){
@@ -96,6 +109,7 @@ void loop() {
         p50 = false;
         Timer3.setPeriod(period_fast_time);
         Timer3.restart();
+        Message = "ON   ";
         break;
         
       case BUTTON_OFF:
@@ -104,6 +118,7 @@ void loop() {
         p50 = false;
         Timer3.setPeriod(period_fast_time);
         Timer3.restart();
+        Message = "OFF  ";
         break;
         
       case BUTTON_LIGHT:
@@ -112,6 +127,7 @@ void loop() {
         p50 = false;
         Timer3.setPeriod(period_slow_time);
         Timer3.restart();
+        Message = "LIGHT";
         break;
         
       case BUTTON_DARK:
@@ -120,6 +136,7 @@ void loop() {
         p50 = false;
         Timer3.setPeriod(period_slow_time);
         Timer3.restart();
+        Message = "DARK ";
         break;
         
       case BUTTON_50:
@@ -132,6 +149,7 @@ void loop() {
         Stop = false;
         Timer3.setPeriod(period_fast_time);
         Timer3.restart();
+        Message = "50%  ";
         break;
    
       case BUTTON_ALL_ZONES:
@@ -161,12 +179,14 @@ void loop() {
      case BUTTON_STOP:
        Timer3.stop();
        Stop = true;
+       Message = "STOP ";
        break;
 
     case BUTTON_EMERGENCY:
        Timer3.stop();
        for (auto i = 12; i <= 20; i++){ArduinoDmx1.TxBuffer[i] = 255;};
        Emergency = true;
+       Message = "ALARM";
        break;
         
      default: break;
@@ -177,11 +197,28 @@ void loop() {
   
   if ((Stop == false) and (Emergency == false)) {
     for (auto i = 0; i <= 2; i++){
+      lcd.setCursor(11+i*2, 0);
       if (zone_state[i] == true) { 
         ArduinoDmx1.TxBuffer[leds[i]] = brightness_zone[i];
         ArduinoDmx1.TxBuffer[leds[i]+1] = brightness_zone[i];
         ArduinoDmx1.TxBuffer[leds[i]+2] = brightness_zone[i];
-      };
+        lcd.print(i+1);
+      } else lcd.print(" ");
+      Mes_br += brightness_zone[i];
+      Mes_br += " ";
     };
+    while (Mes_br.length() < 11){
+     Mes_br += " ";
+      };
   };
+
+  lcd.setCursor(0,0);
+  lcd.print(Message);
+  lcd.setCursor(6,0);
+  lcd.print("Zone:");
+  lcd.setCursor(0,1);
+  lcd.print("Br.:");
+  lcd.setCursor(5, 1);
+  lcd.print(Mes_br);
+  Mes_br = "";
 }
