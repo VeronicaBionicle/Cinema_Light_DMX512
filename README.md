@@ -1,6 +1,10 @@
 # Cinema_Light_DMX512
 This is my graduate qualification work. It controls LED lighting via DMX512. And has GPIO and Ethernet interfaces and IR-remote control
 
+02/04/2019
+- Added LCD-display for indication of modes, chosen zone and brightness of zones.
+- Fixed type of delays (from int to long int). Now fade time is 1,5 and 7 seconds.
+
 26/03/2019
 - Main_sketch works! Now it`s DMX512 transiever controlled by IR-remote.
 - Brightness is changing in Timer3 interrupts, so the mode can be chosen immediately.
