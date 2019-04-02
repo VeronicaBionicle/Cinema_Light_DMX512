@@ -20,6 +20,8 @@
 #define BUTTON_ZONE_2 16726215 //8
 #define BUTTON_ZONE_3 16734885 //9
 #define BUTTON_EMERGENCY 16728765 //*
+#define BUTTON_OK 16712445
+#define BUTTON_SETTINGS 16732845 //#
 
 #define    DMX512     (0)    // (250 kbaud - 2 to 512 channels) Standard USITT DMX-512
 //pins
@@ -28,25 +30,34 @@ IRrecv irrecv(IR_PIN); // пин, к которому подключен IR пр
 
 LiquidCrystal_I2C lcd(0x27,16,2);
 
+int Menu = 0;
+bool Exit = false;
+bool Setting = false;
+String Menu_option[4] = {"Max bright. set  ", "ON/OFF time        ", "LIGHT/DARK time ", "Exit settings   "};
+                                                                       
 int zone_pins[3] = {4,5,6};
-//timings
-long int fast_time = 1500000; // 1 sec
+//default timings
+long int fast_time = 1500000; // 1.5 sec
 long int slow_time = 7000000;  // 7 sec
 long int period_fast_time = fast_time/255;
 long int period_slow_time = slow_time/255;
 
-int max_brightness = 255;
+int max_brightness[3] = {255, 255, 255};
 decode_results results;
 int fade;
-boolean Stop = false;
+
 boolean Emergency = false;
 boolean p50 = false;
 int brightness_zone[3] = {0,0,0};
 boolean zone_state[3] = {true, true, true};
+
+int chosen_zone = 3;
 int leds[3] = {12, 15, 18};
 
-String Message;
+String Message = "OFF  ";
 String Mes_br = "";
+String Mes_time = "";
+
 void setup() // процедура setup
 {
   irrecv.enableIRIn();  // запускаем прием инфракрасного сигнала
@@ -67,45 +78,55 @@ void setup() // процедура setup
   lcd.backlight();
   lcd.clear();
   
-  digitalWrite (zone_pins[0], HIGH);
+  digitalWrite (zone_pins[0], HIGH); 
 
-  
+  for (auto i = 0; i <= 2; i++){
+        lcd.setCursor(11+i*2, 0);
+        lcd.print(i+1);};
 }
 
 void Timer_int(){
- for (auto i = 0; i <= 2; i++){
+
+
+
+for (auto i = 0; i <= 2; i++){
       if (zone_state[i] == true) {
         if (p50 == false) {
-          if (((brightness_zone[i] < max_brightness) and (fade == 1)) or (brightness_zone[i] > 0) and (fade == -1)) {brightness_zone[i] += fade;};} else {
-             if (((brightness_zone[i] < max_brightness/2) and (fade == 1)) or (brightness_zone[i] > max_brightness/2) and (fade == -1)) {brightness_zone[i] += fade;};
+          if (((brightness_zone[i] < max_brightness[i]) and (fade == 1)) or (brightness_zone[i] > 0) and (fade == -1)) {brightness_zone[i] += fade;};} else {
+             if (((brightness_zone[i] < max_brightness[i]/2) and (fade == 1)) or (brightness_zone[i] > max_brightness[i]/2) and (fade == -1)) {brightness_zone[i] += fade;};
           };
       };
  };
+
+
 };
   
 void loop() {
   if (irrecv.decode(&results)) // если данные пришли выполняем команды
   {
     switch(results.value){
+
+      case BUTTON_SETTINGS:
+        Timer3.stop();
+        Setting = true;  
+        break;
+     
       case BUTTON_UP:
-        Stop = false;
         p50 = false;
-        for (auto i = 0; i <= 2; i++){
+         for (auto i = 0; i <= 2; i++){
           if (zone_state[i] == true) {if (brightness_zone[i] < 255) brightness_zone[i] += 5;};
         };
         break;
         
       case BUTTON_DOWN:
-        Stop = false;
         p50 = false;
-        for (auto i = 0; i <= 2; i++){
+         for (auto i = 0; i <= 2; i++){
           if (zone_state[i] == true) {if (brightness_zone[i] > 0) brightness_zone[i] -= 5;};
         };
         break;
         
       case BUTTON_ON:
         fade = 1;
-        Stop = false;
         p50 = false;
         Timer3.setPeriod(period_fast_time);
         Timer3.restart();
@@ -114,7 +135,6 @@ void loop() {
         
       case BUTTON_OFF:
         fade = -1;
-        Stop = false;
         p50 = false;
         Timer3.setPeriod(period_fast_time);
         Timer3.restart();
@@ -123,7 +143,6 @@ void loop() {
         
       case BUTTON_LIGHT:
         fade = 1;
-        Stop = false;
         p50 = false;
         Timer3.setPeriod(period_slow_time);
         Timer3.restart();
@@ -132,7 +151,6 @@ void loop() {
         
       case BUTTON_DARK:
         fade = -1;
-        Stop = false;
         p50 = false;
         Timer3.setPeriod(period_slow_time);
         Timer3.restart();
@@ -141,84 +159,388 @@ void loop() {
         
       case BUTTON_50:
         p50 = true;
-        for (auto i = 0; i <= 2; i++){
+             for (auto i = 0; i <= 2; i++){
           if (zone_state[i] == true) {
-            if (brightness_zone[i] > 178) fade = -1; else fade = 1;
+            if (brightness_zone[i] > 127) fade = -1; else fade = 1;
           };
         };
-        Stop = false;
         Timer3.setPeriod(period_fast_time);
         Timer3.restart();
         Message = "50%  ";
         break;
    
       case BUTTON_ALL_ZONES:
+        Timer3.stop();
+        chosen_zone = 3;
         zone_state[0] = true;
         zone_state[1] = true;
         zone_state[2] = true;
+        for (auto i = 0; i <= 2; i++){
+        lcd.setCursor(11+i*2, 0);
+        lcd.print(i+1);};
         break;
          
       case BUTTON_ZONE_1:
+        Timer3.stop();
         zone_state[0] = true;
         zone_state[1] = false;
         zone_state[2] = false;
+        chosen_zone = 0;
+         lcd.setCursor(11,0);
+         lcd.print("     ");
+         lcd.setCursor(11+chosen_zone*2, 0);
+         lcd.print(chosen_zone+1);
         break;
         
      case BUTTON_ZONE_2:
-        zone_state[0] = false;
+        Timer3.stop();
+         zone_state[0] = false;
         zone_state[1] = true;
         zone_state[2] = false;
+        chosen_zone = 1;
+         lcd.setCursor(11,0);
+         lcd.print("     ");
+         lcd.setCursor(11+chosen_zone*2, 0);
+         lcd.print(chosen_zone+1);
         break;
         
      case BUTTON_ZONE_3: 
+        Timer3.stop();
         zone_state[0] = false;
         zone_state[1] = false;
         zone_state[2] = true;
+        chosen_zone = 2;
+         lcd.setCursor(11,0);
+         lcd.print("     ");
+         lcd.setCursor(11+chosen_zone*2, 0);
+         lcd.print(chosen_zone+1);
         break;
 
      case BUTTON_STOP:
        Timer3.stop();
-       Stop = true;
        Message = "STOP ";
        break;
 
     case BUTTON_EMERGENCY:
        Timer3.stop();
        for (auto i = 12; i <= 20; i++){ArduinoDmx1.TxBuffer[i] = 255;};
-       Emergency = true;
-       Message = "ALARM";
+       Emergency = !Emergency;
+       lcd.setCursor(0,0);
+       lcd.print("ALARM");
        break;
         
      default: break;
     };
-    
     irrecv.resume(); // принимаем следующий сигнал на ИК приемнике
   };
   
-  if ((Stop == false) and (Emergency == false)) {
-    for (auto i = 0; i <= 2; i++){
-      lcd.setCursor(11+i*2, 0);
+  if ((Emergency == false) and (Setting == false)) {
+          for (auto i = 0; i <= 2; i++){
       if (zone_state[i] == true) { 
         ArduinoDmx1.TxBuffer[leds[i]] = brightness_zone[i];
         ArduinoDmx1.TxBuffer[leds[i]+1] = brightness_zone[i];
         ArduinoDmx1.TxBuffer[leds[i]+2] = brightness_zone[i];
-        lcd.print(i+1);
-      } else lcd.print(" ");
+      };
       Mes_br += brightness_zone[i];
       Mes_br += " ";
     };
+      /*if (chosen_zone < 3) {
+      ArduinoDmx1.TxBuffer[leds[chosen_zone]] = brightness_zone[chosen_zone];
+      ArduinoDmx1.TxBuffer[leds[chosen_zone]+1] = brightness_zone[chosen_zone];
+      ArduinoDmx1.TxBuffer[leds[chosen_zone]+2] = brightness_zone[chosen_zone];
+        for (auto i = 0; i <= 2; i++){
+        Mes_br += brightness_zone[i];
+        Mes_br += " ";
+        };
+        } else {
+        for (auto i = 12; i <= 20; i++){ArduinoDmx1.TxBuffer[i] = brightness_zone[chosen_zone];};
+        for (auto i = 0; i <= 2; i++){
+        Mes_br += brightness_zone[i];
+        Mes_br += " ";
+        
+        };
+          };*/
+
+        
     while (Mes_br.length() < 11){
      Mes_br += " ";
       };
-  };
-
+      
   lcd.setCursor(0,0);
   lcd.print(Message);
   lcd.setCursor(6,0);
   lcd.print("Zone:");
   lcd.setCursor(0,1);
-  lcd.print("Br.:");
+  lcd.print("Br.: ");
   lcd.setCursor(5, 1);
   lcd.print(Mes_br);
   Mes_br = "";
+  }
+  else {
+    if (Setting == true){
+      Menu = 0;
+      lcd.clear();
+      lcd.setCursor(0,0);
+      lcd.print("Settings menu");
+      lcd.setCursor(0,1);
+      lcd.print(Menu_option[Menu]);
+      irrecv.resume();
+      do {     
+        if (irrecv.decode(&results)){
+           switch(results.value){
+            
+            case BUTTON_DOWN:
+             if (Menu < 3) Menu++; else Menu = 0;
+             lcd.setCursor(0,1);
+             lcd.print(Menu_option[Menu]);
+             break;
+          
+            case BUTTON_UP: 
+             if (Menu > 0) Menu--; else Menu = 3;
+             lcd.setCursor(0,1);
+             lcd.print(Menu_option[Menu]);
+             break;
+        
+            case BUTTON_OK:
+              switch (Menu) {
+                
+                case 0:
+                  Exit = false;
+                  lcd.clear();
+                  lcd.setCursor(0,0);
+                  lcd.print("Max bright. set  ");
+                  lcd.setCursor(0,1);
+                  lcd.print("Choose zone:    ");
+                  irrecv.resume();
+                  do {
+                    if (irrecv.decode(&results)){
+                    switch(results.value){
+                     
+                      case BUTTON_ZONE_1:
+                        chosen_zone = 0;
+                        lcd.setCursor(0,1);
+                        lcd.print("Choose zone:    ");
+                        lcd.setCursor(13,1);
+                        lcd.print("1  ");
+                        break;
+                      
+                      case BUTTON_ZONE_2:
+                        chosen_zone = 1;
+                        lcd.setCursor(0,1);
+                        lcd.print("Choose zone:    ");
+                        lcd.setCursor(13,1);
+                        lcd.print("2  ");
+                        break;
+                      
+                      case BUTTON_ZONE_3:
+                        chosen_zone = 2;
+                        lcd.setCursor(0,1);
+                        lcd.print("Choose zone:    ");
+                        lcd.setCursor(13,1);
+                        lcd.print("3  ");
+                        break;
+                      
+                      case BUTTON_ALL_ZONES:
+                        chosen_zone = 3;
+                        lcd.setCursor(0,1);
+                        lcd.print("Choose zone:    ");
+                        lcd.setCursor(13,1);
+                        lcd.print("All");
+                        break;
+                      
+                      case BUTTON_OK:
+                        Exit = false;
+                        lcd.setCursor(0,0);
+                        lcd.print("Max brightness: ");
+                        lcd.setCursor(0,1);
+                        lcd.print(max_brightness[chosen_zone]);
+                        lcd.print("             ");
+                        irrecv.resume();
+                        do {
+                    if (irrecv.decode(&results)){
+                    switch(results.value){
+          
+                      case BUTTON_UP:
+                            if (max_brightness[chosen_zone] < 255) {
+                              max_brightness[chosen_zone]++;
+                              } else max_brightness[chosen_zone] = 0; 
+                              lcd.setCursor(0,1);
+                              lcd.print(max_brightness[chosen_zone]);
+                              lcd.print("             ");
+                              break;
+                        
+                      case BUTTON_DOWN:
+                            if (max_brightness[chosen_zone] > 0) {
+                              max_brightness[chosen_zone]--;
+                              } else max_brightness[chosen_zone] = 255; 
+                              lcd.setCursor(0,1);
+                              lcd.print(max_brightness[chosen_zone]);
+                              lcd.print("             ");
+                              break;
+                        
+                      case BUTTON_OK:
+                        lcd.clear();
+                        lcd.setCursor(0,0);
+                        lcd.print("Settings menu");
+                        lcd.setCursor(0,1);
+                        lcd.print(Menu_option[Menu]);
+                        if (chosen_zone == 3) {
+                          max_brightness[0]= max_brightness[3];
+                          max_brightness[1]= max_brightness[3];
+                          max_brightness[2]= max_brightness[3];
+                          };
+                        
+                        chosen_zone = 3;
+                        Exit = true;
+                        break;
+                        }
+                      irrecv.resume();  
+                      }
+                    } while (Exit == false);
+                        break;
+                      };
+                    irrecv.resume();
+                    };
+                  } while (Exit == false);
+                  
+                  break;
+                  
+                case 1:
+                  Exit = false;
+                  lcd.clear();
+                  lcd.setCursor(0,0);
+                  lcd.print("ON/OFF time");
+                  lcd.setCursor(0,1);
+                  lcd.print("Fade time:     s");
+                  lcd.setCursor(11,1);
+                  Mes_time += fast_time/1000000;
+                  Mes_time += ",";
+                  Mes_time += fast_time/10000%100;
+                  lcd.print(Mes_time);
+                  Mes_time = "";
+                  irrecv.resume();
+                  do {
+                    if (irrecv.decode(&results)){
+                    switch(results.value){
+                      
+                      case BUTTON_UP:
+                        if (fast_time < 8000000) fast_time += 250000; else fast_time = 0;
+                        lcd.setCursor(0,1);
+                        lcd.print("Fade time:     s");
+                        lcd.setCursor(11,1);
+                        Mes_time += fast_time/1000000;
+                        Mes_time += ",";
+                        Mes_time += fast_time/10000%100;
+                        lcd.print(Mes_time);
+                        Mes_time = "";
+                        break;
+                        
+                      case BUTTON_DOWN:
+                        if (fast_time > 0) fast_time -= 250000; else fast_time = 8000000;
+                        lcd.setCursor(0,1);
+                        lcd.print("Fade time:     s");
+                        lcd.setCursor(11,1);
+                        Mes_time += fast_time/1000000;
+                        Mes_time += ",";
+                        Mes_time += fast_time/10000%100;
+                        lcd.print(Mes_time);
+                        Mes_time = "";
+                        break;
+                      
+                      case BUTTON_OK:
+                        period_fast_time = fast_time/255;
+                        lcd.clear();
+                        lcd.setCursor(0,0);
+                        lcd.print("Settings menu");
+                        lcd.setCursor(0,1);
+                        lcd.print(Menu_option[Menu]);
+                        Exit = true;
+                        break;
+                      };  
+                    irrecv.resume();
+                    };
+                    } while (Exit == false);
+                  break;
+                  
+                case 2:
+                  Exit = false;
+                  lcd.clear();
+                  lcd.setCursor(0,0);
+                  lcd.print("LIGHT/DARK time");
+                  lcd.setCursor(0,1);
+                  lcd.print("Fade time:     s");
+                  lcd.setCursor(11,1);
+                  Mes_time += slow_time/1000000;
+                  Mes_time += ",";
+                  Mes_time += slow_time/10000%100;
+                  lcd.print(Mes_time);
+                  Mes_time = "";
+                  irrecv.resume();
+                  do {
+                    if (irrecv.decode(&results)){
+                    switch(results.value){
+                      
+                      case BUTTON_UP:
+                        if (slow_time < 8000000) slow_time += 250000; else slow_time = 0;
+                        lcd.setCursor(0,1);
+                        lcd.print("Fade time:     s");
+                        lcd.setCursor(11,1);
+                        Mes_time += fast_time/1000000;
+                        Mes_time += ",";
+                        Mes_time += fast_time/10000%100;
+                        lcd.print(Mes_time);
+                        Mes_time = "";
+                        break;
+                        
+                      case BUTTON_DOWN:
+                        if (slow_time > 0) slow_time -= 250000; else slow_time = 8000000;
+                        lcd.setCursor(0,1);
+                        lcd.print("Fade time:     s");
+                        lcd.setCursor(11,1);
+                        Mes_time += slow_time/1000000;
+                        Mes_time += ",";
+                        Mes_time += slow_time/10000%100;
+                        lcd.print(Mes_time);
+                        Mes_time = "";
+                        break;
+                      
+                      case BUTTON_OK:
+                        period_slow_time = slow_time/255;
+                        lcd.clear();
+                        lcd.setCursor(0,0);
+                        lcd.print("Settings menu");
+                        lcd.setCursor(0,1);
+                        lcd.print(Menu_option[Menu]);
+                        Exit = true;
+                        break;
+                      };  
+                    irrecv.resume();
+                    };
+                    } while (Exit == false);
+                  break;
+                
+                case 3:
+                  Exit = true;
+                  Setting = false;
+                  lcd.clear();
+                  break;
+                };
+              break;
+            
+            case BUTTON_SETTINGS:
+              Setting = false;
+              Exit = true;
+              lcd.setCursor(0,0);
+              lcd.clear();
+              break;
+               
+            };
+             irrecv.resume(); // принимаем следующий сигнал на ИК приемнике
+          };   
+        } while (Setting == true);
+      
+      };
+    
+    };
+ 
 }
