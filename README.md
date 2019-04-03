@@ -1,6 +1,11 @@
 # Cinema_Light_DMX512
 This is my graduate qualification work. It controls LED lighting via DMX512. And has GPIO and Ethernet interfaces and IR-remote control
 
+03/04/2019
+- Fixed some stuff about "fade"
+- "Settings" now is "Back" button in Settings menu
+- Brightness in Settings menu is written in (0-255) range and percents (0.00%)
+
 02/04/2019
 - Added LCD-display for indication of modes, chosen zone and brightness of zones.
 - Added Menu for setting maximum brightness and fading speed.
