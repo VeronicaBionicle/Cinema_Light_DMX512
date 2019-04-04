@@ -1,21 +1,26 @@
 # Cinema_Light_DMX512
 This is my graduate qualification work. It controls LED lighting via DMX512. And has GPIO and Ethernet interfaces and IR-remote control
 
+04/04/2019
+- Added "Watch settings" option to Settings menu. Now you can see max brightness of zones and fade time for fast and slow modes;
+- Increased max fade time to 60 s;
+- Fixed interface in Setting up LIGHT/DARK and ON/OFF time.
+
 03/04/2019
-- Fixed some stuff about "fade"
-- "Settings" now is "Back" button in Settings menu
-- Brightness in Settings menu is written in (0-255) range and percents (0.00%)
+- Fixed some stuff about "fade";
+- "Settings" now is "Back" button in Settings menu;
+- Brightness in Settings menu is written in (0-255) range and percents (0.00%).
 
 02/04/2019
-- Added LCD-display for indication of modes, chosen zone and brightness of zones.
-- Added Menu for setting maximum brightness and fading speed.
-- Fixed type of delays (from int to long int). Now default fade time is 1,5 and 7 seconds.
-- Fixed 50% brightness from 178 to 127 (what was i thinking about?)
+- Added LCD-display for indication of modes, chosen zone and brightness of zones;
+- Added Menu for setting maximum brightness and fading speed;
+- Fixed type of delays (from int to long int). Now default fade time is 1,5 and 7 seconds;
+- Fixed 50% brightness from 178 to 127 (what was i thinking about?).
 
 26/03/2019
-- Main_sketch works! Now it is DMX512 transiever controlled by IR-remote.
-- Brightness is changing in Timer3 interrupts, so the mode can be chosen immediately.
-- There are ON/OFF, LIGHT/DARK, 50%, STOP, EMERGENCY modes, manual brightness changing (by Up and Down).
+- Main_sketch works! Now it is DMX512 transiever controlled by IR-remote;
+- Brightness is changing in Timer3 interrupts, so the mode can be chosen immediately;
+- There are ON/OFF, LIGHT/DARK, 50%, STOP, EMERGENCY modes, manual brightness changing (by Up and Down);
 - Each zone can be selected. 
 
 22/03/2019
