@@ -6,7 +6,7 @@
 #include <Wire.h> 
 #include <LiquidCrystal_I2C.h>
 
-void Timer_int();
+//void Timer_int();
 
 // Коды кнопок пульта
 #define BUTTON_UP 16736925  //Up
@@ -35,7 +35,7 @@ LiquidCrystal_I2C lcd(0x27,16,2);
 int Menu = 0;
 bool Exit = false;
 bool Setting = false;
-String Menu_option[4] = {"Max bright. set  ", "ON/OFF time        ", "LIGHT/DARK time ", "Exit settings   "};
+String Menu_option[5] = {"Max bright. set  ", "ON/OFF time        ", "LIGHT/DARK time ", "Watch settings  ","Exit settings   "};
                                                                        
 int zone_pins[3] = {4,5,6};
 //default timings
@@ -247,7 +247,6 @@ void loop() {
         ArduinoDmx1.TxBuffer[leds[i]+1] = brightness_zone[i];
         ArduinoDmx1.TxBuffer[leds[i]+2] = brightness_zone[i];
       };
-      
       Mes_br += brightness_zone[i];
       Mes_br += " ";
     };
@@ -280,13 +279,13 @@ void loop() {
            switch(results.value){ //Menu
             
             case BUTTON_DOWN:
-             if (Menu < 3) Menu++; else Menu = 0;
+             if (Menu < 4) Menu++; else Menu = 0;
              lcd.setCursor(0,1);
              lcd.print(Menu_option[Menu]);
              break;
           
             case BUTTON_UP: 
-             if (Menu > 0) Menu--; else Menu = 3;
+             if (Menu > 0) Menu--; else Menu = 4;
              lcd.setCursor(0,1);
              lcd.print(Menu_option[Menu]);
              break;
@@ -428,7 +427,7 @@ void loop() {
                   lcd.print("ON/OFF time");
                   lcd.setCursor(0,1);
                   lcd.print("Fade time:     s");
-                  lcd.setCursor(11,1);
+                  lcd.setCursor(10,1);
                   Mes_time += fast_time/1000000;
                   Mes_time += ",";
                   Mes_time += fast_time/10000%100;
@@ -440,10 +439,10 @@ void loop() {
                     switch(results.value){  //setting up ON/OFF time
                       
                       case BUTTON_UP:
-                        if (fast_time < 20000000) fast_time += 250000; else fast_time = 0;
+                        if (fast_time < 60000000) fast_time += 250000; else fast_time = 0;
                         lcd.setCursor(0,1);
                         lcd.print("Fade time:     s");
-                        lcd.setCursor(11,1);
+                        lcd.setCursor(10,1);
                         Mes_time += fast_time/1000000;
                         Mes_time += ",";
                         Mes_time += fast_time/10000%100;
@@ -452,10 +451,10 @@ void loop() {
                         break;
                         
                       case BUTTON_DOWN:
-                        if (fast_time > 0) fast_time -= 250000; else fast_time = 20000000;
+                        if (fast_time > 0) fast_time -= 250000; else fast_time = 60000000;
                         lcd.setCursor(0,1);
                         lcd.print("Fade time:     s");
-                        lcd.setCursor(11,1);
+                        lcd.setCursor(10,1);
                         Mes_time += fast_time/1000000;
                         Mes_time += ",";
                         Mes_time += fast_time/10000%100;
@@ -496,7 +495,7 @@ void loop() {
                   lcd.print("LIGHT/DARK time");
                   lcd.setCursor(0,1);
                   lcd.print("Fade time:     s");
-                  lcd.setCursor(11,1);
+                  lcd.setCursor(10,1);
                   Mes_time += slow_time/1000000;
                   Mes_time += ",";
                   Mes_time += slow_time/10000%100;
@@ -508,22 +507,22 @@ void loop() {
                     switch(results.value){  //setting up LIGHT/DARK time
                       
                       case BUTTON_UP:
-                        if (slow_time < 20000000) slow_time += 250000; else slow_time = 0;
+                        if (slow_time < 60000000) slow_time += 250000; else slow_time = 0;
                         lcd.setCursor(0,1);
                         lcd.print("Fade time:     s");
-                        lcd.setCursor(11,1);
-                        Mes_time += fast_time/1000000;
+                        lcd.setCursor(10,1);
+                        Mes_time += slow_time/1000000;
                         Mes_time += ",";
-                        Mes_time += fast_time/10000%100;
+                        Mes_time += slow_time/10000%100;
                         lcd.print(Mes_time);
                         Mes_time = "";
                         break;
                         
                       case BUTTON_DOWN:
-                        if (slow_time > 0) slow_time -= 250000; else slow_time = 20000000;
+                        if (slow_time > 0) slow_time -= 250000; else slow_time = 60000000;
                         lcd.setCursor(0,1);
                         lcd.print("Fade time:     s");
-                        lcd.setCursor(11,1);
+                        lcd.setCursor(10,1);
                         Mes_time += slow_time/1000000;
                         Mes_time += ",";
                         Mes_time += slow_time/10000%100;
@@ -556,8 +555,60 @@ void loop() {
                     };
                     } while (Exit == false);
                   break;
+
+                  case 3:
+                  Exit = false;
+                  lcd.clear();
+                  lcd.setCursor(0,0);
+                  lcd.print("MaxBr");
+                  for (auto i = 0; i <= 2; i++) {
+                    lcd.print(max_brightness[i]);
+                    lcd.print(" ");
+                    };
+                  lcd.setCursor(0,1);
+                  lcd.print("Time:");
+                  lcd.setCursor(6,1);
+                  Mes_time += fast_time/1000000;
+                  Mes_time += ",";
+                  Mes_time += fast_time/10000%100;
+                  Mes_time += " ";
+                  Mes_time += slow_time/1000000;
+                  Mes_time += ",";
+                  Mes_time += slow_time/10000%100;
+                  lcd.print(Mes_time);
+                  Mes_time = "";
+                  irrecv.resume();
+                  do {
+                    if (irrecv.decode(&results)){
+                    switch(results.value){
+                      
+                      case BUTTON_OK:
+                      
+                        lcd.clear();
+                        lcd.setCursor(0,0);
+                        lcd.print("Settings menu");
+                        lcd.setCursor(0,1);
+                        lcd.print(Menu_option[Menu]);
+                        Exit = true;
+                        break;
+                        
+                      case BUTTON_SETTINGS:
+                 
+                        lcd.clear();
+                        lcd.setCursor(0,0);
+                        lcd.print("Settings menu");
+                        lcd.setCursor(0,1);
+                        lcd.print(Menu_option[Menu]);
+                        Exit = true;
+                        break;
+                        
+                      };  
+                    irrecv.resume();
+                    };
+                    } while (Exit == false);
+                break;
                 
-                case 3: //exit settings menu
+                case 4: //exit settings menu
                   Exit = true;
                   Setting = false;
                   lcd.clear();
@@ -576,6 +627,9 @@ void loop() {
              irrecv.resume(); // принимаем следующий сигнал на ИК приемнике
           };   
         } while (Setting == true);
+      
       };
+    
     };
+ 
 }
