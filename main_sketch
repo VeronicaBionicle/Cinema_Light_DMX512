@@ -5,8 +5,14 @@
 #include <lib_dmx.h>
 #include <Wire.h> 
 #include <LiquidCrystal_I2C.h>
+#include <EEPROM2.h>
 
-//void Timer_int();
+#define hi_fast_time 3
+#define low_fast_time 4 
+#define hi_slow_time 5
+#define low_slow_time 6
+
+byte hi, low;
 
 // Коды кнопок пульта
 #define BUTTON_UP 16736925  //Up
@@ -39,10 +45,10 @@ String Menu_option[5] = {"Max bright. set  ", "ON/OFF time        ", "LIGHT/DARK
                                                                        
 int zone_pins[3] = {4,5,6};
 //default timings
-long int fast_time = 1500000; // 1.5 sec
-long int slow_time = 7000000;  // 7 sec
-long int period_fast_time = fast_time/255;
-long int period_slow_time = slow_time/255;
+long int fast_time;
+long int slow_time;  // 7 sec
+long int period_fast_time;
+long int period_slow_time;
 
 int max_brightness[4] = {255, 255, 255, 255};
 decode_results results;
@@ -59,6 +65,43 @@ int leds[3] = {12, 15, 18};
 String Message = "OFF  ";
 String Mes_br = "";
 String Mes_time = "";
+
+void EEPROM_brightness_data_write(){
+  for (auto i = 0; i <=2; i++){
+    EEPROM.write(i, max_brightness[i]); 
+  };
+};
+
+void EEPROM_slow_time_data_write(){
+  hi = highByte(slow_time/10000);
+  low = lowByte(slow_time/10000);
+  EEPROM.write(low_slow_time, low); 
+  EEPROM.write(hi_slow_time, hi);
+};
+
+void EEPROM_fast_time_data_write(){
+  hi = highByte(fast_time/10000);
+  low = lowByte(fast_time/10000);
+  EEPROM.write(low_fast_time, low); 
+  EEPROM.write(hi_fast_time, hi);
+};
+
+void EEPROM_data_read(){
+  for (auto i = 0; i <=2; i++){
+    max_brightness[i] = EEPROM.read(i);
+    };
+    
+  hi = EEPROM.read(hi_slow_time);
+  low = EEPROM.read(low_slow_time);  
+  slow_time = word(hi, low);
+  slow_time *= 10000;
+  
+  hi = EEPROM.read(hi_fast_time);
+  low = EEPROM.read(low_fast_time); 
+  fast_time = word(hi, low);
+  fast_time *= 10000;
+};
+
 
 void setup() // процедура setup
 {
@@ -79,7 +122,11 @@ void setup() // процедура setup
   lcd.init();                      // initialize the lcd
   lcd.backlight();
   lcd.clear();
-  
+
+  EEPROM_data_read();
+
+  period_slow_time = slow_time/255;
+  period_fast_time = fast_time/255;
   digitalWrite (zone_pins[0], HIGH); 
   
   for (auto i = 0; i <= 2; i++){
@@ -393,6 +440,7 @@ void loop() {
                           max_brightness[1]= max_brightness[3];
                           max_brightness[2]= max_brightness[3];
                           };
+                        EEPROM_brightness_data_write();
                         Exit = true;
                         break;
             
@@ -406,6 +454,7 @@ void loop() {
                         max_brightness[0]= max_brightness[3];
                         max_brightness[1]= max_brightness[3];
                         max_brightness[2]= max_brightness[3];
+                        EEPROM_brightness_data_write();
                         Exit = true;
                         break;
                         }
@@ -464,6 +513,7 @@ void loop() {
                       
                       case BUTTON_OK: //saving result
                         period_fast_time = fast_time/255;
+                        EEPROM_fast_time_data_write();
                         lcd.clear();
                         lcd.setCursor(0,0);
                         lcd.print("Settings menu");
@@ -472,9 +522,10 @@ void loop() {
                         Exit = true;
                         break;
             
-                    case BUTTON_SETTINGS: //ON/OFF fade time becomes default 1.5 s
-                        fast_time = 1500000;
+                    case BUTTON_SETTINGS: //ON/OFF fade time becomes default 1 s
+                        fast_time = 1000000;
                         period_fast_time = fast_time/255;
+                        EEPROM_fast_time_data_write();
                         Exit = true;
                         lcd.clear();
                         lcd.setCursor(0,0);
@@ -532,6 +583,7 @@ void loop() {
                       
                       case BUTTON_OK: //saving result
                         period_slow_time = slow_time/255;
+                        EEPROM_slow_time_data_write();
                         lcd.clear();
                         lcd.setCursor(0,0);
                         lcd.print("Settings menu");
@@ -540,9 +592,10 @@ void loop() {
                         Exit = true;
                         break;
             
-                      case BUTTON_SETTINGS: //LIGHT/DARK fade time becomes default 7 s
-                        slow_time = 7000000;
+                      case BUTTON_SETTINGS: //LIGHT/DARK fade time becomes default 10 s
+                        slow_time = 10000000;
                         period_slow_time = slow_time/255;
+                        EEPROM_slow_time_data_write();
                         Exit = true;
                         lcd.clear();
                         lcd.setCursor(0,0);
@@ -583,7 +636,6 @@ void loop() {
                     switch(results.value){
                       
                       case BUTTON_OK:
-                      
                         lcd.clear();
                         lcd.setCursor(0,0);
                         lcd.print("Settings menu");
@@ -593,7 +645,6 @@ void loop() {
                         break;
                         
                       case BUTTON_SETTINGS:
-                 
                         lcd.clear();
                         lcd.setCursor(0,0);
                         lcd.print("Settings menu");
