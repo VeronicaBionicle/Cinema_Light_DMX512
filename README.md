@@ -2,8 +2,9 @@
 This is my graduate qualification work. It controls LED lighting via DMX512. And has GPIO and Ethernet interfaces and IR-remote control
 
 04/04/2019
+- Now configuration (settings of max brightness and fade time) is saved in EEPROM (keep safe after turning off);
 - Added "Watch settings" option to Settings menu. Now you can see max brightness of zones and fade time for fast and slow modes;
-- Increased max fade time to 60 s;
+- Increased max fade time to 60 s, default time of slow fade is 10s and fast fade - 1s;
 - Fixed interface in Setting up LIGHT/DARK and ON/OFF time.
 
 03/04/2019
