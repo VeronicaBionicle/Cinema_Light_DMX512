@@ -1,0 +1,42 @@
+#include <TimerOne.h>
+
+int Button_state;
+bool Keyboard_state = false;
+int Mass[5][4] = {{0,1,2,3},{4,5,6,7},{8,9,10,11},{0,12,0,0},{0,13,14,0} };
+int portState[5] = {1,2,4,8,16};
+
+void Timer_int(){
+
+for(auto i=0; i<5; i++)
+    { 
+       PORTC=portState[i];
+       
+       for(auto j=0; j<4; j++)
+       {
+        
+          if(((PINA==portState[j])))
+          {
+            Keyboard_state = true;
+             Button_state = Mass[i][j];                                  
+          }
+       }                          
+    }  
+
+  };
+
+void setup() {
+  // put your setup code here, to run once:
+DDRC = 0b00011111;
+DDRA = 0b00000000;
+Serial.begin(9600);
+Timer1.initialize(10000);
+  Timer1.attachInterrupt(Timer_int);
+}
+
+void loop() {
+  if (Keyboard_state){
+    Serial.println(Button_state);
+    delay(100);
+     Keyboard_state = false;
+     };
+}
