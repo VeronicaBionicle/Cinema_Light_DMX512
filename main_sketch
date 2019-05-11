@@ -1,3 +1,4 @@
+#include <TimerOne.h>
 #include <TimerThree.h>
 #include <boarddefs.h>
 #include <IRremote.h>
@@ -41,7 +42,7 @@ LiquidCrystal_I2C lcd(0x27,16,2);
 int Menu = 0;
 bool Exit = false;
 bool Setting = false;
-String Menu_option[5] = {"Max bright. set  ", "ON/OFF time        ", "LIGHT/DARK time ", "Watch settings  ","Exit settings   "};
+String Menu_option[5] = {"Max bright. set  ", "ON/OFF time        ", "LIGHT/DARK time ", "View settings   ","Exit settings   "};
                                                                        
 int zone_pins[3] = {4,5,6};
 //default timings
@@ -66,6 +67,13 @@ String Message = "OFF  ";
 String Mes_br = "";
 String Mes_time = "";
 
+int Button_state;
+bool Keyboard_state = false;
+//int Mass[5][4] = {{0,1,2,3},{4,5,6,7},{8,9,10,11},{0,12,0,0},{0,13,14,0} };
+int Mass[5][4] = {{BUTTON_ALL_ZONES,BUTTON_ON,BUTTON_OFF,BUTTON_50},{BUTTON_LIGHT,BUTTON_DARK,BUTTON_STOP,BUTTON_ZONE_1},{BUTTON_ZONE_2,BUTTON_ZONE_3,BUTTON_OK,BUTTON_SETTINGS},{0,BUTTON_UP,0,0},{0,BUTTON_EMERGENCY,BUTTON_DOWN,0} };
+int portState[5] = {1,2,4,8,16};
+
+int Res; 
 void EEPROM_brightness_data_write(){
   for (auto i = 0; i <=2; i++){
     EEPROM.write(i, max_brightness[i]); 
@@ -104,7 +112,7 @@ void EEPROM_data_read(){
 
 
 void setup() // процедура setup
-{
+{ 
   irrecv.enableIRIn();  // запускаем прием инфракрасного сигнала
   
   pinMode(zone_pins[0], OUTPUT);
@@ -127,7 +135,12 @@ void setup() // процедура setup
 
   period_slow_time = slow_time/255;
   period_fast_time = fast_time/255;
-  digitalWrite (zone_pins[0], HIGH); 
+  digitalWrite (zone_pins[0], HIGH);
+
+DDRC = 0b00011111;
+DDRA = 0b00000000;
+Timer1.initialize(150000);
+Timer1.attachInterrupt(Keyboard_int);
   
   for (auto i = 0; i <= 2; i++){
         lcd.setCursor(11+i*2, 0);
@@ -144,18 +157,38 @@ for (auto i = 0; i <= 2; i++){
       };
  };
 };
-  
-void loop() {
-  if (irrecv.decode(&results)) // main commands
-  {
-    switch(results.value){
 
+void Keyboard_int(){
+
+for(auto i=0; i<5; i++)
+    { 
+       PORTC=portState[i];
+       
+       for(auto j=0; j<4; j++)
+       {
+        
+          if(((PINA==portState[j])))
+          {
+            Keyboard_state = true;
+             Button_state = Mass[i][j];                                  
+          }
+       }                          
+    }  
+
+  };
+ 
+void loop() {
+  if (irrecv.decode(&results) or Keyboard_state) // main commands
+  {
+    if (irrecv.decode(&results)) Res = results.value; else Res = Button_state;
+    switch(Res){
       case BUTTON_SETTINGS:
         Timer3.stop();
         Setting = true;  
         break;
      
       case BUTTON_UP:
+      Keyboard_state = false;
         p50 = false;
          for (auto i = 0; i <= 2; i++){
           if (zone_state[i] == true) {if (brightness_zone[i] < 255) brightness_zone[i] += 5;};
@@ -163,6 +196,7 @@ void loop() {
         break;
         
       case BUTTON_DOWN:
+      Keyboard_state = false;
         p50 = false;
         for (auto i = 0; i <= 2; i++){
           if (zone_state[i] == true) {if (brightness_zone[i] > 0) brightness_zone[i] -= 5;};
@@ -275,6 +309,7 @@ void loop() {
        break;
 
     case BUTTON_EMERGENCY:
+           Keyboard_state = false;
        Timer3.stop();
        for (auto i = 12; i <= 20; i++){ArduinoDmx1.TxBuffer[i] = 255;};
        Emergency = !Emergency;
@@ -285,8 +320,9 @@ void loop() {
      default: break;
     };
     irrecv.resume(); // принимаем следующий сигнал на ИК приемнике
+    Keyboard_state = false;
   };
-  
+
   if ((Emergency == false) and (Setting == false)) {
           for (auto i = 0; i <= 2; i++){
       if (zone_state[i] == true) { 
@@ -321,23 +357,29 @@ void loop() {
       lcd.setCursor(0,1);
       lcd.print(Menu_option[Menu]);
       irrecv.resume();
+      Keyboard_state = false;
       do {     
-        if (irrecv.decode(&results)){
-           switch(results.value){ //Menu
+          if (irrecv.decode(&results) or Keyboard_state) // main commands
+  {
+    if (irrecv.decode(&results)) Res = results.value; else Res = Button_state;
+    switch(Res){ //Menu
             
             case BUTTON_DOWN:
+            Keyboard_state = false;
              if (Menu < 4) Menu++; else Menu = 0;
              lcd.setCursor(0,1);
              lcd.print(Menu_option[Menu]);
              break;
           
             case BUTTON_UP: 
+            Keyboard_state = false;
              if (Menu > 0) Menu--; else Menu = 4;
              lcd.setCursor(0,1);
              lcd.print(Menu_option[Menu]);
              break;
         
             case BUTTON_OK: //choose option
+           
               switch (Menu) {
                 
                 case 0: // changing max brightness
@@ -348,9 +390,12 @@ void loop() {
                   lcd.setCursor(0,1);
                   lcd.print("Choose zone:    ");
                   irrecv.resume();
+                  Keyboard_state = false;
                   do {
-                    if (irrecv.decode(&results)){
-                    switch(results.value){  //choosing zone
+                           if (irrecv.decode(&results) or Keyboard_state) // main commands
+  {
+    if (irrecv.decode(&results)) Res = results.value; else Res = Button_state;
+    switch(Res){  //choosing zone
                      
                       case BUTTON_ZONE_1:
                         chosen_zone = 0;
@@ -403,11 +448,15 @@ void loop() {
                         lcd.print(float(max_brightness[chosen_zone])*100/255);
                         lcd.print("%            ");
                         irrecv.resume();
+                        Keyboard_state = false;
                         do {
-                    if (irrecv.decode(&results)){
-                    switch(results.value){  //setting brightness
+                                            if (irrecv.decode(&results) or Keyboard_state) // main commands
+  {
+    if (irrecv.decode(&results)) Res = results.value; else Res = Button_state;
+    switch(Res){  //setting brightness
           
                       case BUTTON_UP:
+                      Keyboard_state = false;
                             if (max_brightness[chosen_zone] < 255) {
                               max_brightness[chosen_zone]++;
                               } else max_brightness[chosen_zone] = 0; 
@@ -419,6 +468,7 @@ void loop() {
                               break;
                         
                       case BUTTON_DOWN:
+                      Keyboard_state = false;
                             if (max_brightness[chosen_zone] > 0) {
                               max_brightness[chosen_zone]--;
                               } else max_brightness[chosen_zone] = 255; 
@@ -458,12 +508,14 @@ void loop() {
                         Exit = true;
                         break;
                         }
-                      irrecv.resume();  
+                      irrecv.resume();
+                      Keyboard_state = false;  
                       }
                     } while (Exit == false);
                         break;
                       };
                     irrecv.resume();
+                    Keyboard_state = false;
                     };
                   } while (Exit == false);
                   
@@ -483,11 +535,15 @@ void loop() {
                   lcd.print(Mes_time);
                   Mes_time = "";
                   irrecv.resume();
+                  Keyboard_state = false;
                   do {
-                    if (irrecv.decode(&results)){
-                    switch(results.value){  //setting up ON/OFF time
+                   if (irrecv.decode(&results) or Keyboard_state) // main commands
+  {
+    if (irrecv.decode(&results)) Res = results.value; else Res = Button_state;
+    switch(Res){  //setting up ON/OFF time
                       
                       case BUTTON_UP:
+                      Keyboard_state = false;
                         if (fast_time < 60000000) fast_time += 250000; else fast_time = 0;
                         lcd.setCursor(0,1);
                         lcd.print("Fade time:     s");
@@ -500,6 +556,7 @@ void loop() {
                         break;
                         
                       case BUTTON_DOWN:
+                      Keyboard_state = false;
                         if (fast_time > 0) fast_time -= 250000; else fast_time = 60000000;
                         lcd.setCursor(0,1);
                         lcd.print("Fade time:     s");
@@ -535,6 +592,7 @@ void loop() {
                         break;
                       };  
                     irrecv.resume();
+                    Keyboard_state = false;
                     };
                     } while (Exit == false);
                   break;
@@ -553,11 +611,15 @@ void loop() {
                   lcd.print(Mes_time);
                   Mes_time = "";
                   irrecv.resume();
+                  Keyboard_state = false;
                   do {
-                    if (irrecv.decode(&results)){
-                    switch(results.value){  //setting up LIGHT/DARK time
+                  if (irrecv.decode(&results) or Keyboard_state) // main commands
+  {
+    if (irrecv.decode(&results)) Res = results.value; else Res = Button_state;
+    switch(Res){  //setting up LIGHT/DARK time
                       
                       case BUTTON_UP:
+                      Keyboard_state = false;
                         if (slow_time < 60000000) slow_time += 250000; else slow_time = 0;
                         lcd.setCursor(0,1);
                         lcd.print("Fade time:     s");
@@ -567,9 +629,11 @@ void loop() {
                         Mes_time += slow_time/10000%100;
                         lcd.print(Mes_time);
                         Mes_time = "";
+                        
                         break;
                         
                       case BUTTON_DOWN:
+                      Keyboard_state = false;
                         if (slow_time > 0) slow_time -= 250000; else slow_time = 60000000;
                         lcd.setCursor(0,1);
                         lcd.print("Fade time:     s");
@@ -579,6 +643,7 @@ void loop() {
                         Mes_time += slow_time/10000%100;
                         lcd.print(Mes_time);
                         Mes_time = "";
+                       
                         break;
                       
                       case BUTTON_OK: //saving result
@@ -605,6 +670,7 @@ void loop() {
                         break;
                       };  
                     irrecv.resume();
+                    Keyboard_state = false;
                     };
                     } while (Exit == false);
                   break;
@@ -631,9 +697,12 @@ void loop() {
                   lcd.print(Mes_time);
                   Mes_time = "";
                   irrecv.resume();
+                  Keyboard_state = false;
                   do {
-                    if (irrecv.decode(&results)){
-                    switch(results.value){
+                    if (irrecv.decode(&results) or Keyboard_state) // main commands
+  {
+    if (irrecv.decode(&results)) Res = results.value; else Res = Button_state;
+    switch(Res){
                       
                       case BUTTON_OK:
                         lcd.clear();
@@ -655,6 +724,7 @@ void loop() {
                         
                       };  
                     irrecv.resume();
+                    Keyboard_state = false;
                     };
                     } while (Exit == false);
                 break;
@@ -676,6 +746,7 @@ void loop() {
                
             };
              irrecv.resume(); // принимаем следующий сигнал на ИК приемнике
+             Keyboard_state = false;
           };   
         } while (Setting == true);
       
