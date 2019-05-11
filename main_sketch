@@ -15,7 +15,7 @@
 
 byte hi, low;
 
-// Коды кнопок пульта
+// IR-remote buttons` codes
 #define BUTTON_UP 16736925  //Up
 #define BUTTON_DOWN 16754775  //Down
 #define BUTTON_STOP 16743045   //6
@@ -110,10 +110,9 @@ void EEPROM_data_read(){
   fast_time *= 10000;
 };
 
-
-void setup() // процедура setup
+void setup()
 { 
-  irrecv.enableIRIn();  // запускаем прием инфракрасного сигнала
+  irrecv.enableIRIn();
   
   pinMode(zone_pins[0], OUTPUT);
   pinMode(zone_pins[1], OUTPUT);
@@ -745,9 +744,6 @@ void loop() {
              Keyboard_state = false;
           };   
         } while (Setting == true);
-      
       };
-    
     };
- 
 }
