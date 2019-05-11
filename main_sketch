@@ -34,7 +34,7 @@ byte hi, low;
 // (250 kbaud - 2 to 512 channels) Standard USITT DMX-512
 #define    DMX512     (0)    
 //pins
-#define IR_PIN A0 // пин, к которому подключен IR приемник
+#define IR_PIN A0 // IR-receiver pin
 IRrecv irrecv(IR_PIN); 
 
 LiquidCrystal_I2C lcd(0x27,16,2);
