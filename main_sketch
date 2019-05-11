@@ -137,10 +137,10 @@ void setup() // процедура setup
   period_fast_time = fast_time/255;
   digitalWrite (zone_pins[0], HIGH);
 
-DDRC = 0b00011111;
-DDRA = 0b00000000;
-Timer1.initialize(150000);
-Timer1.attachInterrupt(Keyboard_int);
+  DDRC = 0b00011111;
+  DDRA = 0b00000000;
+  Timer1.initialize(150000);
+  Timer1.attachInterrupt(Keyboard_int);
   
   for (auto i = 0; i <= 2; i++){
         lcd.setCursor(11+i*2, 0);
@@ -159,23 +159,19 @@ for (auto i = 0; i <= 2; i++){
 };
 
 void Keyboard_int(){
-
-for(auto i=0; i<5; i++)
-    { 
-       PORTC=portState[i];
-       
-       for(auto j=0; j<4; j++)
-       {
-        
-          if(((PINA==portState[j])))
-          {
-            Keyboard_state = true;
-             Button_state = Mass[i][j];                                  
-          }
-       }                          
-    }  
-
-  };
+  for(auto i=0; i<5; i++)
+  { 
+    PORTC=portState[i];
+    for(auto j=0; j<4; j++)
+    {
+      if(((PINA==portState[j])))
+      {
+        Keyboard_state = true;
+        Button_state = Mass[i][j];                                  
+      }
+    }                          
+  }  
+};
  
 void loop() {
   if (irrecv.decode(&results) or Keyboard_state) // main commands
@@ -309,7 +305,7 @@ void loop() {
        break;
 
     case BUTTON_EMERGENCY:
-           Keyboard_state = false;
+       Keyboard_state = false;
        Timer3.stop();
        for (auto i = 12; i <= 20; i++){ArduinoDmx1.TxBuffer[i] = 255;};
        Emergency = !Emergency;
@@ -324,7 +320,7 @@ void loop() {
   };
 
   if ((Emergency == false) and (Setting == false)) {
-          for (auto i = 0; i <= 2; i++){
+    for (auto i = 0; i <= 2; i++){
       if (zone_state[i] == true) { 
         ArduinoDmx1.TxBuffer[leds[i]] = brightness_zone[i];
         ArduinoDmx1.TxBuffer[leds[i]+1] = brightness_zone[i];
@@ -359,10 +355,10 @@ void loop() {
       irrecv.resume();
       Keyboard_state = false;
       do {     
-          if (irrecv.decode(&results) or Keyboard_state) // main commands
-  {
-    if (irrecv.decode(&results)) Res = results.value; else Res = Button_state;
-    switch(Res){ //Menu
+        if (irrecv.decode(&results) or Keyboard_state) // main commands
+        {
+          if (irrecv.decode(&results)) Res = results.value; else Res = Button_state;
+            switch(Res){ //Menu
             
             case BUTTON_DOWN:
             Keyboard_state = false;
@@ -392,10 +388,10 @@ void loop() {
                   irrecv.resume();
                   Keyboard_state = false;
                   do {
-                           if (irrecv.decode(&results) or Keyboard_state) // main commands
-  {
-    if (irrecv.decode(&results)) Res = results.value; else Res = Button_state;
-    switch(Res){  //choosing zone
+                    if (irrecv.decode(&results) or Keyboard_state) // main commands
+                    {
+                      if (irrecv.decode(&results)) Res = results.value; else Res = Button_state;
+                      switch(Res){  //choosing zone
                      
                       case BUTTON_ZONE_1:
                         chosen_zone = 0;
@@ -450,64 +446,64 @@ void loop() {
                         irrecv.resume();
                         Keyboard_state = false;
                         do {
-                                            if (irrecv.decode(&results) or Keyboard_state) // main commands
-  {
-    if (irrecv.decode(&results)) Res = results.value; else Res = Button_state;
-    switch(Res){  //setting brightness
+                          if (irrecv.decode(&results) or Keyboard_state) // main commands
+                          {
+                            if (irrecv.decode(&results)) Res = results.value; else Res = Button_state;
+                            switch(Res){  //setting brightness
           
-                      case BUTTON_UP:
-                      Keyboard_state = false;
-                            if (max_brightness[chosen_zone] < 255) {
-                              max_brightness[chosen_zone]++;
-                              } else max_brightness[chosen_zone] = 0; 
-                              lcd.setCursor(0,1);
-                              lcd.print(max_brightness[chosen_zone]);
-                              lcd.print(" ");
-                              lcd.print(float(max_brightness[chosen_zone])*100/255);
-                              lcd.print("%            ");
-                              break;
-                        
-                      case BUTTON_DOWN:
-                      Keyboard_state = false;
-                            if (max_brightness[chosen_zone] > 0) {
-                              max_brightness[chosen_zone]--;
-                              } else max_brightness[chosen_zone] = 255; 
-                              lcd.setCursor(0,1);
-                              lcd.print(max_brightness[chosen_zone]);
-                              lcd.print(" ");
-                              lcd.print(float(max_brightness[chosen_zone])*100/255);
-                              lcd.print("%            ");
-                              break;
-                        
-                      case BUTTON_OK: //saving result
-                        lcd.clear();
-                        lcd.setCursor(0,0);
-                        lcd.print("Settings menu");
-                        lcd.setCursor(0,1);
-                        lcd.print(Menu_option[Menu]);
-                        if (chosen_zone == 3) {
-                          max_brightness[0]= max_brightness[3];
-                          max_brightness[1]= max_brightness[3];
-                          max_brightness[2]= max_brightness[3];
-                          };
-                        EEPROM_brightness_data_write();
-                        Exit = true;
-                        break;
-            
-                      case BUTTON_SETTINGS: //brightness for all zones becomes default 255
-                        lcd.clear();
-                        lcd.setCursor(0,0);
-                        lcd.print("Settings menu");
-                        lcd.setCursor(0,1);
-                        lcd.print(Menu_option[Menu]);
-                        max_brightness[3] = 255;
-                        max_brightness[0]= max_brightness[3];
-                        max_brightness[1]= max_brightness[3];
-                        max_brightness[2]= max_brightness[3];
-                        EEPROM_brightness_data_write();
-                        Exit = true;
-                        break;
-                        }
+                              case BUTTON_UP:
+                              Keyboard_state = false;
+                                    if (max_brightness[chosen_zone] < 255) {
+                                      max_brightness[chosen_zone]++;
+                                      } else max_brightness[chosen_zone] = 0; 
+                                      lcd.setCursor(0,1);
+                                      lcd.print(max_brightness[chosen_zone]);
+                                      lcd.print(" ");
+                                      lcd.print(float(max_brightness[chosen_zone])*100/255);
+                                      lcd.print("%            ");
+                                      break;
+                                
+                              case BUTTON_DOWN:
+                              Keyboard_state = false;
+                                    if (max_brightness[chosen_zone] > 0) {
+                                      max_brightness[chosen_zone]--;
+                                      } else max_brightness[chosen_zone] = 255; 
+                                      lcd.setCursor(0,1);
+                                      lcd.print(max_brightness[chosen_zone]);
+                                      lcd.print(" ");
+                                      lcd.print(float(max_brightness[chosen_zone])*100/255);
+                                      lcd.print("%            ");
+                                      break;
+                                
+                              case BUTTON_OK: //saving result
+                                lcd.clear();
+                                lcd.setCursor(0,0);
+                                lcd.print("Settings menu");
+                                lcd.setCursor(0,1);
+                                lcd.print(Menu_option[Menu]);
+                                if (chosen_zone == 3) {
+                                  max_brightness[0]= max_brightness[3];
+                                  max_brightness[1]= max_brightness[3];
+                                  max_brightness[2]= max_brightness[3];
+                                  };
+                                EEPROM_brightness_data_write();
+                                Exit = true;
+                                break;
+                    
+                              case BUTTON_SETTINGS: //brightness for all zones becomes default 255
+                                lcd.clear();
+                                lcd.setCursor(0,0);
+                                lcd.print("Settings menu");
+                                lcd.setCursor(0,1);
+                                lcd.print(Menu_option[Menu]);
+                                max_brightness[3] = 255;
+                                max_brightness[0]= max_brightness[3];
+                                max_brightness[1]= max_brightness[3];
+                                max_brightness[2]= max_brightness[3];
+                                EEPROM_brightness_data_write();
+                                Exit = true;
+                                break;
+                                }
                       irrecv.resume();
                       Keyboard_state = false;  
                       }
@@ -537,10 +533,10 @@ void loop() {
                   irrecv.resume();
                   Keyboard_state = false;
                   do {
-                   if (irrecv.decode(&results) or Keyboard_state) // main commands
-  {
-    if (irrecv.decode(&results)) Res = results.value; else Res = Button_state;
-    switch(Res){  //setting up ON/OFF time
+                  if (irrecv.decode(&results) or Keyboard_state) // main commands
+                  {
+                    if (irrecv.decode(&results)) Res = results.value; else Res = Button_state;
+                    switch(Res){  //setting up ON/OFF time
                       
                       case BUTTON_UP:
                       Keyboard_state = false;
@@ -614,9 +610,9 @@ void loop() {
                   Keyboard_state = false;
                   do {
                   if (irrecv.decode(&results) or Keyboard_state) // main commands
-  {
-    if (irrecv.decode(&results)) Res = results.value; else Res = Button_state;
-    switch(Res){  //setting up LIGHT/DARK time
+                  {
+                    if (irrecv.decode(&results)) Res = results.value; else Res = Button_state;
+                      switch(Res){  //setting up LIGHT/DARK time
                       
                       case BUTTON_UP:
                       Keyboard_state = false;
@@ -700,9 +696,9 @@ void loop() {
                   Keyboard_state = false;
                   do {
                     if (irrecv.decode(&results) or Keyboard_state) // main commands
-  {
-    if (irrecv.decode(&results)) Res = results.value; else Res = Button_state;
-    switch(Res){
+                    {
+                    if (irrecv.decode(&results)) Res = results.value; else Res = Button_state;
+                     switch(Res){
                       
                       case BUTTON_OK:
                         lcd.clear();
