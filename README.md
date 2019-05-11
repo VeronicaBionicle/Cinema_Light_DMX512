@@ -1,9 +1,10 @@
 # Cinema_Light_DMX512
 This is my graduate qualification work. It controls LED lighting via DMX512. And has GPIO and Ethernet interfaces and IR-remote control
+
 11/05/2019
-- Added keyboard from Ricoh FT4215 (A128);
+- Added keyboard from Ricoh FT4215 (A128) (150 ms period for debouncing, but sometimes it doesn`t help, because Start button is fubar);
 - Fixed "Watch settings" to "View settings";
-- Plans: Clean up tabulation, make .h and .cpp files for functions and etc, add debouncing.
+- Plans: make .h and .cpp files for functions and etc.
 
 04/04/2019
 - Now configuration (settings of max brightness and fade time) is saved in EEPROM (keep safe after turning off);
