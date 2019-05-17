@@ -15,7 +15,7 @@
 
 byte hi, low;
 
-// IR-remote buttons` codes
+// Коды кнопок пульта
 #define BUTTON_UP 16736925  //Up
 #define BUTTON_DOWN 16754775  //Down
 #define BUTTON_STOP 16743045   //6
@@ -34,46 +34,74 @@ byte hi, low;
 // (250 kbaud - 2 to 512 channels) Standard USITT DMX-512
 #define    DMX512     (0)    
 //pins
-#define IR_PIN A0 // IR-receiver pin
+#define IR_PIN A0 // пин, к которому подключен IR приемник
 IRrecv irrecv(IR_PIN); 
 
 LiquidCrystal_I2C lcd(0x27,16,2);
 
-int Menu = 0;
+byte Menu = 0;
 bool Exit = false;
 bool Setting = false;
 String Menu_option[5] = {"Max bright. set  ", "ON/OFF time        ", "LIGHT/DARK time ", "View settings   ","Exit settings   "};
                                                                        
-int zone_pins[3] = {4,5,6};
+byte zone_pins[3] = {4,5,6};
 //default timings
-long int fast_time;
-long int slow_time;  // 7 sec
-long int period_fast_time;
-long int period_slow_time;
+unsigned long int fast_time;
+unsigned long int slow_time;  // 7 sec
+unsigned long int period_fast_time;
+unsigned long int period_slow_time;
 
-int max_brightness[4] = {255, 255, 255, 255};
+byte max_brightness[4] = {255, 255, 255, 255};
 decode_results results;
-int fade[3];
+
+short int fade[3];
 
 boolean Emergency = false;
 boolean p50 = false;
-int brightness_zone[3] = {0,0,0};
+byte brightness_zone[3] = {0,0,0};
 boolean zone_state[3] = {true, true, true};
 
-int chosen_zone = 3;
-int leds[3] = {12, 15, 18};
+byte chosen_zone = 3;
+byte leds[3] = {12, 15, 18};
 
 String Message = "OFF  ";
 String Mes_br = "";
 String Mes_time = "";
 
-int Button_state;
+unsigned int Button_state;
 bool Keyboard_state = false;
-//int Mass[5][4] = {{0,1,2,3},{4,5,6,7},{8,9,10,11},{0,12,0,0},{0,13,14,0} };
-int Mass[5][4] = {{BUTTON_ALL_ZONES,BUTTON_ON,BUTTON_OFF,BUTTON_50},{BUTTON_LIGHT,BUTTON_DARK,BUTTON_STOP,BUTTON_ZONE_1},{BUTTON_ZONE_2,BUTTON_ZONE_3,BUTTON_OK,BUTTON_SETTINGS},{0,BUTTON_UP,0,0},{0,BUTTON_EMERGENCY,BUTTON_DOWN,0} };
-int portState[5] = {1,2,4,8,16};
+//byte Mass[5][4] = {{0,1,2,3},{4,5,6,7},{8,9,10,11},{0,12,0,0},{0,13,14,0} };
+unsigned int Mass[5][4] = {{BUTTON_ALL_ZONES,BUTTON_ON,BUTTON_OFF,BUTTON_50},{BUTTON_LIGHT,BUTTON_DARK,BUTTON_STOP,BUTTON_ZONE_1},{BUTTON_ZONE_2,BUTTON_ZONE_3,BUTTON_OK,BUTTON_SETTINGS},{0,BUTTON_UP,0,0},{0,BUTTON_EMERGENCY,BUTTON_DOWN,0} };
+byte portState[5] = {1,2,4,8,16};
 
-int Res; 
+unsigned int Res;
+
+void zone_interface(){
+  if (chosen_zone == 3) {
+    for (auto i = 0; i <= 2; i++){
+      lcd.setCursor(11+i*2, 0);
+      lcd.print(i+1);
+    };
+  } else {
+    lcd.setCursor(11,0);
+    lcd.print("     ");
+    lcd.setCursor(11+chosen_zone*2, 0);
+    lcd.print(chosen_zone+1);
+  };
+};
+
+void interface_draw(){
+  lcd.setCursor(0,0);
+  lcd.print(Message);
+  lcd.setCursor(6,0);
+  lcd.print("Zone:");
+  lcd.setCursor(0,1);
+  lcd.print("Br.: ");
+  lcd.setCursor(5, 1);
+  lcd.print(Mes_br);
+  Mes_br = "";
+};
+ 
 void EEPROM_brightness_data_write(){
   for (auto i = 0; i <=2; i++){
     EEPROM.write(i, max_brightness[i]); 
@@ -110,9 +138,10 @@ void EEPROM_data_read(){
   fast_time *= 10000;
 };
 
-void setup()
+
+void setup() // процедура setup
 { 
-  irrecv.enableIRIn();
+  irrecv.enableIRIn();  // запускаем прием инфракрасного сигнала
   
   pinMode(zone_pins[0], OUTPUT);
   pinMode(zone_pins[1], OUTPUT);
@@ -141,9 +170,7 @@ void setup()
   Timer1.initialize(150000);
   Timer1.attachInterrupt(Keyboard_int);
   
-  for (auto i = 0; i <= 2; i++){
-        lcd.setCursor(11+i*2, 0);
-        lcd.print(i+1);};
+  zone_interface();
 }
 
 void Timer_int(){
@@ -256,10 +283,7 @@ void loop() {
         zone_state[0] = true;
         zone_state[1] = true;
         zone_state[2] = true;
-        for (auto i = 0; i <= 2; i++){
-          lcd.setCursor(11+i*2, 0);
-          lcd.print(i+1);
-        };
+        zone_interface();
         break;
          
       case BUTTON_ZONE_1:
@@ -268,10 +292,7 @@ void loop() {
         zone_state[1] = false;
         zone_state[2] = false;
         chosen_zone = 0;
-        lcd.setCursor(11,0);
-        lcd.print("     ");
-        lcd.setCursor(11+chosen_zone*2, 0);
-        lcd.print(chosen_zone+1);
+        zone_interface();
         break;
         
      case BUTTON_ZONE_2:
@@ -280,10 +301,7 @@ void loop() {
         zone_state[1] = true;
         zone_state[2] = false;
         chosen_zone = 1;
-        lcd.setCursor(11,0);
-        lcd.print("     ");
-        lcd.setCursor(11+chosen_zone*2, 0);
-        lcd.print(chosen_zone+1);
+        zone_interface();
         break;
         
      case BUTTON_ZONE_3: 
@@ -292,10 +310,7 @@ void loop() {
         zone_state[1] = false;
         zone_state[2] = true;
         chosen_zone = 2;
-        lcd.setCursor(11,0);
-        lcd.print("     ");
-        lcd.setCursor(11+chosen_zone*2, 0);
-        lcd.print(chosen_zone+1);
+        zone_interface();
         break;
 
      case BUTTON_STOP:
@@ -332,16 +347,7 @@ void loop() {
     while (Mes_br.length() < 11){
      Mes_br += " ";
       };
-  // Interface    
-  lcd.setCursor(0,0);
-  lcd.print(Message);
-  lcd.setCursor(6,0);
-  lcd.print("Zone:");
-  lcd.setCursor(0,1);
-  lcd.print("Br.: ");
-  lcd.setCursor(5, 1);
-  lcd.print(Mes_br);
-  Mes_br = "";
+      interface_draw();
   }
   else {
     if (Setting == true){ //if Setting was pushed
@@ -728,6 +734,7 @@ void loop() {
                   Exit = true;
                   Setting = false;
                   lcd.clear();
+                  zone_interface();
                   break;
                 };
               break;
@@ -735,8 +742,9 @@ void loop() {
               case BUTTON_SETTINGS: //exit settings menu
                 Setting = false;
                 Exit = true;
-                lcd.setCursor(0,0);
+                //lcd.setCursor(0,0);
                 lcd.clear();
+                zone_interface();
                 break;
                
             };
@@ -744,6 +752,9 @@ void loop() {
              Keyboard_state = false;
           };   
         } while (Setting == true);
+      
       };
+    
     };
+ 
 }
