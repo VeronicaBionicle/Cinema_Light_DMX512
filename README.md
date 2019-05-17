@@ -1,6 +1,10 @@
 # Cinema_Light_DMX512
 This is my graduate qualification work. It controls LED lighting via DMX512. And has GPIO and Ethernet interfaces and IR-remote control
 
+17/05/2019
+- Changed variables` types to more appropriate (brightness and time can`t be negative or too big, memory is sliiiightly freer);
+- Fixed interface after exiting Settings menu (and packed some functions for interface).
+
 11/05/2019
 - Added keyboard from Ricoh FT4215 (A128) (150 ms period for debouncing, but sometimes it doesn`t help, because Start button is fubar);
 - Fixed "Watch settings" to "View settings";
