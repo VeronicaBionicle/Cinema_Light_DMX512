@@ -15,8 +15,8 @@ The commasds are:
 - '+' and '-': Up and Down;
 - 'G': View settings (Send text with settings to "client");
 - 'M'№ of zone'0-255': set max brightness of zone (if № = 4, brightness of all zones);
-- 'R'123': set fade time of On/Off (1*10 + 2 + 3*0.1);
-- 'C'123': set fade time of Light/Dark (1*10 + 2 + 3*0.1).
+- 'R'123': set fade time of On/Off (1х10 + 2 + 3х0.1 sec);
+- 'C'123': set fade time of Light/Dark (1х10 + 2 + 3х0.1 sec).
 
 17/05/2019
 - Changed variables' types to more appropriate (brightness and time can't be negative or too big, memory is sliiiightly freer);
