@@ -1,6 +1,23 @@
 # Cinema_Light_DMX512
 This is my graduate qualification work. It controls LED lighting via DMX512. And has GPIO and Ethernet interfaces and IR-remote control
 
+12/06/2019
+- Added Ethernet connection! Device can be controlled by TCP text commands from computer and etc.
+The commasds are:
+'N': On;
+'F': Off;
+'5': 50%;
+'L': Light;
+'D': Dark;
+'S':Stop;
+'1','2','3', 'A': 1, 2, 3, All zones;
+'E': Emergency;
+'+' and '-': Up and Down;
+'G': View settings (Send text with settings to "client");
+'M'№ of zone'0-255': set max brightness of zone (if № = 4, brightness of all zones);
+'R'123': set fade time of On/Off (1*10 + 2 + 3*0.1);
+'C'123': set fade time of Light/Dark (1*10 + 2 + 3*0.1).
+
 17/05/2019
 - Changed variables' types to more appropriate (brightness and time can't be negative or too big, memory is sliiiightly freer);
 - Fixed interface after exiting Settings menu (and packed some functions for interface).
